@@ -7,5 +7,13 @@ class Post(models.Model):
         get_user_model(),
         on_delete=models.CASCADE
     )
-    title = models.CharField(max_length=50)
     body = models.TextField()
+    date_published = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'"{self.body}" posted by {self.author}'
+
+    class Meta:
+        verbose_name = 'Post'
+        verbose_name_plural = 'Posts'
+        ordering = ['-date_published']
