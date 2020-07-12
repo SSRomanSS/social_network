@@ -9,5 +9,6 @@ urlpatterns = [
     re_path(r'^posts/(?P<post_id>\d+)/unlike', views.RemoveLike().as_view(), name=None),
     path('posts/post_message/', views.MakePost().as_view()),
     path('posts/likes/list', views.LikeListView.as_view()),
+    path('analitics/', views.DateCountLikes.as_view()),
 
 ]

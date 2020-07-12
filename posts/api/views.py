@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from rest_framework.views import APIView
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -8,6 +9,8 @@ from . import serializers
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework import generics
+from django.db.models import Count
+from django.db.models.functions import TruncDate
 from ..models import Post, Like
 from . import serializers
 
@@ -41,9 +44,28 @@ class CountPostLikes(APIView):
     def get(self, request, **kwargs):
         post_id = int(kwargs['post_id'])
         post = Post.objects.get(id=post_id).body
-        like_count = Like.objects.all().filter(post_id=post_id).count()
+        like_count = Like.objects.filter(post_id=post_id).count()
         content = {post: f'has {like_count} likes'}
         return Response(content)
+
+
+class DateCountLikes(APIView):
+    """
+    GET method for like counting by date
+    api/analitics/?date_from=<yyyy-mm-dd>&date_to=<yyyy-mm-dd>
+    """
+
+    def get(self, request):
+
+        date_from = datetime.strptime(request.GET.get('date_from'), "%Y-%m-%d")
+        date_to = datetime.strptime(request.GET.get('date_to'), "%Y-%m-%d") + timedelta(days=1)
+        likes = Like.objects. \
+            extra({'time': "date_trunc('day', time)"}).\
+            filter(time__range=(date_from, date_to)).\
+            values('time__date').\
+            annotate(total_like=Count('id'))  # extra expression working with PostgreSQL
+            # annotate(time=TruncDate('time'))  # working universal
+        return Response(likes)
 
 
 class ListPostLikes(generics.ListAPIView):
@@ -54,7 +76,7 @@ class ListPostLikes(generics.ListAPIView):
 
     def get_queryset(self, **kwargs):
         post_id = int(self.kwargs['post_id'])
-        queryset = Like.objects.all().filter(post_id=post_id)
+        queryset = Like.objects.filter(post_id=post_id)
         return queryset
 
     serializer_class = serializers.LikeSerializer
