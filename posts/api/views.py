@@ -80,18 +80,37 @@ class MakePost(APIView):
 class AddLike(APIView):
     """
     POST method for like a post
-    /api/messages/<unique_message_identifier(Primary Key in a database)>/add_like
+    /api/posts/<unique_message_identifier(Primary Key in a database)>/add_like
     """
 
     def post(self, request, **kwargs):
         if request.method == 'POST':
             data = {}
-            data['post'] = int(kwargs['post_id'])
-            data['user'] = request.user.id
-            print(data)
-            serializer = serializers.LikeSerializer(data=data)
+            post_id = int(kwargs['post_id'])
+            user_id = request.user.id
+            data['post'] = post_id
+            data['user'] = user_id
+            if not Like.objects.filter(post=post_id, user=user_id).exists():
+                serializer = serializers.LikeSerializer(data=data)
 
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({f'post {post_id}': 'is already liked'})
+
+
+class RemoveLike(APIView):
+    """
+     POST method for unlike a post
+    /api/posts/<unique_message_identifier(Primary Key in a database)>/unlike
+    """
+    def post(self, request, **kwargs):
+        if request.method == 'POST':
+            post_id = int(kwargs['post_id'])
+            user_id = request.user.id
+            like = Like.objects.filter(post=post_id, user=user_id)
+            if like.exists():
+                like.delete()
+                return Response({f'post {post_id}': 'is unliked'})
+            return Response({f'post {post_id}': f'is not liked yet by {user_id}'})
