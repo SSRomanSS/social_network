@@ -35,3 +35,4 @@ class Like(models.Model):
         verbose_name = 'Like'
         verbose_name_plural = 'Likes'
         ordering = ['-time']
+        unique_together = ('post', 'user',)

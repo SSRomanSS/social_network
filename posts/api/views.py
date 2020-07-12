@@ -4,7 +4,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from django.http import Http404
 from django.core.exceptions import ObjectDoesNotExist
-
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from . import serializers
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -23,6 +23,7 @@ class PostListView(generics.ListAPIView):
 
     queryset = Post.objects.all()
     serializer_class = serializers.PostSerializer
+    permission_classes = [AllowAny, ]
 
 
 class LikeListView(generics.ListAPIView):
@@ -33,7 +34,7 @@ class LikeListView(generics.ListAPIView):
 
     queryset = Like.objects.all()
     serializer_class = serializers.LikeSerializer
-
+    # permission_classes = [IsAuthenticatedOrReadOnly, ]
 
 class CountPostLikes(APIView):
     """
