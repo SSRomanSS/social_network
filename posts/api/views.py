@@ -40,10 +40,14 @@ class CountPostLikes(APIView):
 
     def get(self, request, **kwargs):
         post_id = int(kwargs['post_id'])
-        post = Post.objects.get(id=post_id).body
-        like_count = Like.objects.filter(post_id=post_id).count()
-        content = {post: f'has {like_count} likes'}
-        return Response(content)
+        queryset = Post.objects.filter(id=post_id)
+        if queryset.exists():
+            post = Post.objects.get(id=post_id).body
+            like_count = Like.objects.filter(post_id=post_id).count()
+            content = {post: f'has {like_count} likes'}
+            return Response(content)
+        content = {f'post {post_id}': 'is not exist'}
+        return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DateCountLikes(APIView):
@@ -78,10 +82,13 @@ class ListPostLikes(generics.ListAPIView):
     /api/posts/<unique_message_identifier(Primary Key in a database)>/users_like
     """
 
+
     def get_queryset(self, **kwargs):
         post_id = int(self.kwargs['post_id'])
         queryset = Like.objects.filter(post_id=post_id)
-        return queryset
+        if queryset.exists():
+            return queryset
+
 
     serializer_class = serializers.LikeSerializer
 
