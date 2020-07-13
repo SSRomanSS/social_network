@@ -3,9 +3,10 @@ from ..models import CustomUser
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """For Serializing User"""
-    password = serializers.CharField(write_only=True)
+    date_joined = serializers.ReadOnlyField()
 
-    class Meta:
+    class Meta(object):
         model = CustomUser
-        fields = ['username', 'password']
+        fields = ('id', 'email', 'first_name', 'last_name',
+                  'date_joined', 'password')
+        extra_kwargs = {'password': {'write_only': True}}

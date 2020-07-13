@@ -10,5 +10,4 @@ urlpatterns = [
     path('posts/post_message/', views.MakePost().as_view()),
     path('posts/likes/list', views.LikeListView.as_view()),
     path('analitics/', views.DateCountLikes.as_view()),
-
 ]

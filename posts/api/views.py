@@ -1,16 +1,11 @@
 from datetime import datetime, timedelta
 from rest_framework.views import APIView
-from rest_framework import generics, status
-from rest_framework.response import Response
-from django.http import Http404
-from django.core.exceptions import ObjectDoesNotExist
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
-from . import serializers
-from rest_framework.renderers import JSONRenderer
+from rest_framework import status
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import generics
 from django.db.models import Count
-from django.db.models.functions import TruncDate
+
 from ..models import Post, Like
 from . import serializers
 
@@ -36,6 +31,7 @@ class LikeListView(generics.ListAPIView):
     serializer_class = serializers.LikeSerializer
     # permission_classes = [IsAuthenticatedOrReadOnly, ]
 
+
 class CountPostLikes(APIView):
     """
     GET method for single post by unique identifier like counting
@@ -58,15 +54,22 @@ class DateCountLikes(APIView):
 
     def get(self, request):
 
-        date_from = datetime.strptime(request.GET.get('date_from'), "%Y-%m-%d")
-        date_to = datetime.strptime(request.GET.get('date_to'), "%Y-%m-%d") + timedelta(days=1)
-        likes = Like.objects. \
-            extra({'time': "date_trunc('day', time)"}).\
-            filter(time__range=(date_from, date_to)).\
-            values('time__date').\
-            annotate(total_like=Count('id'))  # extra expression working with PostgreSQL
-            # annotate(time=TruncDate('time'))  # working universal
-        return Response(likes)
+        if request.GET.get('date_from') and request.GET.get('date_to'):
+            try:
+                date_from = datetime.strptime(request.GET.get('date_from'), "%Y-%m-%d")
+                date_to = datetime.strptime(request.GET.get('date_to'), "%Y-%m-%d") + timedelta(days=1)
+            except ValueError:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            likes = Like.objects. \
+                extra({'time': "date_trunc('day', time)"}).\
+                filter(time__range=(date_from, date_to)).\
+                values('time__date').\
+                annotate(total_like=Count('id'))  # extra expression working with PostgreSQL
+                # annotate(time=TruncDate('time'))  # working universal
+            if likes:
+                return Response(likes)
+            return Response({f'from {date_from.date()} to {date_to.date()}': 'no likes'})
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 class ListPostLikes(generics.ListAPIView):
@@ -128,6 +131,7 @@ class RemoveLike(APIView):
      POST method for unlike a post
     /api/posts/<unique_message_identifier(Primary Key in a database)>/unlike
     """
+
     def post(self, request, **kwargs):
         if request.method == 'POST':
             post_id = int(kwargs['post_id'])
